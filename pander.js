@@ -74,7 +74,7 @@ pander.prototype._apiGet = function(key,URI,callback) {
         callback(obj)
         delete pander[cbName]
     }
-    document.write('<script async src="' + resource + '"><\/script>')
+    document.write('<script async src="' + resource + '"><\/script>') //OMG!! document.write()!!
 }
 
 pander.prototype.get = function(key, URI, callback, failback) {
@@ -96,13 +96,41 @@ pander.prototype.invalidate = function(key) {
     } 
 }
 
-pander.prototype.update = function(key, URI, callback, failback){
+pander.prototype._getType = function(key) {
+    var value = localStorage.getItem(key)
+    if (!value) return null
+    value = JSON.parse(value)
+    return value['type']
+}
+
+pander.prototype._xhrUpdate = function(key,URI,callback,failback){
     var checkString = this._getCheckString(key)
     if (checkString){
         this._remoteGet(key,URI,callback,failback,checkString)
     } else {
         this._remoteGet(key,URI,callback,failback)
     }
+}
+
+pander.prototype._apiUpdate = function (key, URI, callback) {
+    var cbName = key
+    var resource = this._getResource(key,URI,null,'pander.'+cbName)
+    var that=this
+    pander[cbName] = function(obj) {
+        if (that._localGet(key) == obj) return;
+        that._localSetApi(key, resource, obj)
+        callback(obj)
+        delete pander[cbName]
+    }
+    document.write('<script async src="' + resource + '"><\/script>') //bad I know
+}
+
+pander.prototype.update = function(key, URI, callback, failback){
+    var type = this._getType(key)
+    if (type=='api'){
+        this._apiUpdate(key,URI,callback)
+    } else {this._xhrUpdate(key,URI,callback,failback)}
+        
 }
 
 pander.prototype.getLocal = function(key){
